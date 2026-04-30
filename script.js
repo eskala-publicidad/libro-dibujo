@@ -11,9 +11,11 @@ const templates = [
   { label: 'Página 9', src: 'SVG/n3.svg' },
   { label: 'Página 10', src: 'SVG/n4.svg' }
 ];
+const colors = ['#ff4757', '#ff851b', '#ffdc00', '#2ed573', '#1e90ff', '#5352ed', '#ff6b81', '#2f3542'];
 const paintCanvas = document.getElementById('paintCanvas');
 const overlayCanvas = document.getElementById('overlayCanvas');
 const paletteContainer = document.getElementById('palette');
+const zoomPalette = document.getElementById('zoomPalette');
 const templateGallery = document.getElementById('templateGallery');
 const customColorInput = document.getElementById('customColor');
 const brushSizeInput = document.getElementById('brushSize');
@@ -21,15 +23,27 @@ const brushSizeValue = document.getElementById('brushSizeValue');
 const clearBtn = document.getElementById('clearBtn');
 const downloadBtn = document.getElementById('downloadBtn');
 const toolButtons = document.querySelectorAll('.tool-button');
+const zoomBtn = document.getElementById('zoomBtn');
+const zoomBubble = document.getElementById('zoomBubble');
+const zoomRange = document.getElementById('zoomRange');
+const zoomValue = document.getElementById('zoomValue');
+const exitZoomBtn = document.getElementById('exitZoomBtn');
+const zoomToolButtons = document.querySelector('.zoom-tool-buttons');
+const zoomBrushSizeInput = document.getElementById('zoomBrushSize');
+const zoomBrushSizeValue = document.getElementById('zoomBrushSizeValue');
+const canvasFrame = document.querySelector('.canvas-frame');
+const canvasZoomWrapper = document.querySelector('.canvas-zoom-wrapper');
 
 const paintCtx = paintCanvas.getContext('2d');
 const overlayCtx = overlayCanvas.getContext('2d');
-let currentColor = '#ff4757';
+let currentColor = colors[0];
 let brushSize = Number(brushSizeInput.value);
 let currentTool = 'brush';
 let isDrawing = false;
 let lastPoint = { x: 0, y: 0 };
 let currentTemplate = templates[0];
+let isZoomActive = false;
+let zoomFactor = 1.5;
 
 function setCanvasStyles() {
   paintCtx.lineCap = 'round';
@@ -47,30 +61,53 @@ function fillBackground() {
   paintCtx.restore();
 }
 
-function createPalette() {
-  const colors = ['#ff4757', '#ff851b', '#ffdc00', '#2ed573', '#1e90ff', '#5352ed', '#ff6b81', '#2f3542'];
+function createColorPalette(container, swatchClass) {
+  container.innerHTML = '';
   colors.forEach((color) => {
     const swatch = document.createElement('button');
     swatch.type = 'button';
-    swatch.className = 'color-swatch';
+    swatch.className = swatchClass;
     swatch.style.background = color;
-    swatch.addEventListener('click', () => {
-      currentColor = color;
-      if (currentTool === 'brush') {
-        paintCtx.strokeStyle = currentColor;
-      }
-      document.querySelectorAll('.color-swatch').forEach((button) => button.classList.remove('active'));
-      swatch.classList.add('active');
-      customColorInput.value = color;
-      currentTool = 'brush';
-      updateToolSelection();
-    });
-    paletteContainer.appendChild(swatch);
+    swatch.addEventListener('click', () => selectColor(color));
+    container.appendChild(swatch);
   });
-  paletteContainer.firstChild.classList.add('active');
+  updateColorSelection();
+}
+
+function createPalette() {
+  createColorPalette(paletteContainer, 'color-swatch');
+}
+
+function createZoomPalette() {
+  createColorPalette(zoomPalette, 'zoom-color-swatch');
+}
+
+function selectColor(color) {
+  currentColor = color;
+  if (currentTool !== 'eraser') {
+    paintCtx.strokeStyle = currentColor;
+  }
+  customColorInput.value = color;
+  updateColorSelection();
+}
+
+function updateColorSelection() {
+  document.querySelectorAll('.color-swatch, .zoom-color-swatch').forEach((button) => {
+    const isActive = button.style.backgroundColor === ''
+      ? false
+      : rgbToHex(window.getComputedStyle(button).backgroundColor) === currentColor;
+    button.classList.toggle('active', isActive);
+  });
+}
+
+function rgbToHex(rgb) {
+  const match = rgb.match(/\d+/g) || [];
+  if (match.length < 3) return '#000000';
+  return `#${match.slice(0, 3).map((value) => Number(value).toString(16).padStart(2, '0')).join('')}`;
 }
 
 function createTemplateGallery() {
+  templateGallery.innerHTML = '';
   templates.forEach((template, index) => {
     const card = document.createElement('button');
     card.type = 'button';
@@ -100,18 +137,36 @@ function loadTemplate(src) {
 
 function updateBrushPreview() {
   brushSizeValue.textContent = brushSize;
+  zoomBrushSizeValue.textContent = brushSize;
   paintCtx.lineWidth = brushSize;
 }
 
 function updateToolSelection() {
-  toolButtons.forEach((button) => button.classList.toggle('active', button.dataset.tool === currentTool && (button.dataset.size ? Number(button.dataset.size) === brushSize : currentTool === 'eraser')));
+  document.querySelectorAll('.tool-button').forEach((button) => {
+    const tool = button.dataset.tool;
+    const size = button.dataset.size ? Number(button.dataset.size) : null;
+    const isActive = tool === currentTool && (tool === 'eraser' || size === brushSize);
+    button.classList.toggle('active', isActive);
+  });
+  document.querySelectorAll('.zoom-tool-button').forEach((button) => {
+    const tool = button.dataset.tool;
+    const size = button.dataset.size ? Number(button.dataset.size) : null;
+    const isActive = tool === currentTool && (tool === 'eraser' || size === brushSize);
+    button.classList.toggle('active', isActive);
+  });
 }
 
 function setTool(tool, size = brushSize) {
+  if (tool === 'zoom') {
+    toggleZoom();
+    return;
+  }
+
   currentTool = tool;
   brushSize = size;
   paintCtx.lineWidth = brushSize;
   brushSizeInput.value = brushSize;
+  zoomBrushSizeInput.value = brushSize;
   updateBrushPreview();
 
   if (tool === 'eraser') {
@@ -177,6 +232,51 @@ function downloadArtwork() {
   link.click();
 }
 
+function applyZoom() {
+  canvasZoomWrapper.style.transform = `scale(${zoomFactor})`;
+  canvasZoomWrapper.style.setProperty('--zoom-factor', zoomFactor);
+  zoomValue.textContent = `${Math.round(zoomFactor * 100)}%`;
+}
+
+function toggleZoom() {
+  isZoomActive = !isZoomActive;
+  canvasFrame.classList.toggle('zoom-active', isZoomActive);
+  zoomBubble.classList.toggle('hidden', !isZoomActive);
+  zoomBtn.classList.toggle('active', isZoomActive);
+  if (isZoomActive) {
+    zoomRange.value = zoomFactor;
+    zoomBrushSizeInput.value = brushSize;
+    zoomBrushSizeValue.textContent = brushSize;
+    createZoomPalette();
+    createZoomToolButtons();
+    updateToolSelection();
+    applyZoom();
+  } else {
+    zoomFactor = 1.5;
+    applyZoom();
+  }
+}
+
+function createZoomToolButtons() {
+  zoomToolButtons.innerHTML = '';
+  const zoomTools = [
+    { label: 'Lápiz fino', tool: 'brush', size: 4 },
+    { label: 'Lápiz medio', tool: 'brush', size: 10 },
+    { label: 'Lápiz grueso', tool: 'brush', size: 20 },
+    { label: 'Borrador', tool: 'eraser' }
+  ];
+  zoomTools.forEach(({ label, tool, size }) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'zoom-tool-button';
+    button.textContent = label;
+    button.dataset.tool = tool;
+    if (size) button.dataset.size = size;
+    button.addEventListener('click', () => setTool(tool, size || brushSize));
+    zoomToolButtons.appendChild(button);
+  });
+}
+
 function attachEvents() {
   paintCanvas.addEventListener('mousedown', startDrawing);
   paintCanvas.addEventListener('mousemove', draw);
@@ -196,18 +296,28 @@ function attachEvents() {
     });
   });
 
+  zoomBtn.addEventListener('click', () => setTool('zoom'));
+  exitZoomBtn.addEventListener('click', () => {
+    if (isZoomActive) toggleZoom();
+  });
+
+  zoomRange.addEventListener('input', (event) => {
+    zoomFactor = Number(event.target.value);
+    applyZoom();
+  });
+
+  zoomBrushSizeInput.addEventListener('input', (event) => {
+    const size = Number(event.target.value);
+    setTool(currentTool, size);
+  });
+
   brushSizeInput.addEventListener('input', (event) => {
-    brushSize = Number(event.target.value);
-    updateBrushPreview();
-    paintCtx.lineWidth = brushSize;
+    const size = Number(event.target.value);
+    setTool(currentTool, size);
   });
 
   customColorInput.addEventListener('input', (event) => {
-    currentColor = event.target.value;
-    if (currentTool !== 'eraser') {
-      paintCtx.strokeStyle = currentColor;
-    }
-    document.querySelectorAll('.color-swatch').forEach((button) => button.classList.remove('active'));
+    selectColor(event.target.value);
   });
 
   clearBtn.addEventListener('click', clearCanvas);
@@ -227,6 +337,7 @@ function initialize() {
   attachEvents();
   updateBrushPreview();
   updateToolSelection();
+  applyZoom();
 }
 
 initialize();
