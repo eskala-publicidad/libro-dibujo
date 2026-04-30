@@ -11,59 +11,64 @@
     <header class="topbar">
       <div class="title-block">
         <img src="SVG/titulo.svg" alt="Título Melfi Colorea" class="title-art">
-        <p>Explora páginas distintas, elige lápices y borra con precisión como en un libro real.</p>
+        <p>Mueve al personaje por el laberinto y desbloquea un dibujo para descargar y colorear. Completa los 10 niveles.</p>
       </div>
     </header>
 
     <main class="main-grid">
-      <aside class="toolbar">
-        <section class="panel">
-          <h2>Herramienta</h2>
-          <div class="tool-buttons">
-            <button type="button" class="tool-button active" data-tool="brush" data-size="4">Lápiz fino</button>
-            <button type="button" class="tool-button" data-tool="brush" data-size="10">Lápiz medio</button>
-            <button type="button" class="tool-button" data-tool="brush" data-size="20">Lápiz grueso</button>
-            <button type="button" class="tool-button" data-tool="eraser">Borrador</button>
+      <section class="game-panel">
+        <div class="status-panel">
+          <div class="status-row">
+            <div>
+              <span class="status-label">Nivel</span>
+              <strong id="levelLabel">1</strong>
+            </div>
+            <div>
+              <span class="status-label">Completados</span>
+              <strong id="completedCount">0</strong> / 10
+            </div>
           </div>
-          <p class="tool-note">Elige lápiz para colorear o borrador para limpiar con precisión.</p>
-        </section>
+          <p id="gameMessage" class="game-message">Usa las flechas, los botones o desliza para mover.</p>
+        </div>
 
-        <section class="panel">
-          <h2>Colores</h2>
-          <div id="palette" class="color-palette"></div>
-          <label class="custom-color">
-            <span>Color personalizado</span>
-            <input type="color" id="customColor" value="#ff6b81">
-          </label>
-        </section>
+        <div class="maze-board">
+          <canvas id="mazeCanvas" width="640" height="640"></canvas>
+        </div>
 
-        <section class="panel">
-          <h2>Grosor del trazo</h2>
-          <label for="brushSize">Tamaño: <span id="brushSizeValue">8</span> px</label>
-          <input type="range" id="brushSize" min="2" max="50" value="8">
-        </section>
+        <div class="controls-grid">
+          <button id="upBtn" class="control-btn">↑</button>
+          <button id="leftBtn" class="control-btn">←</button>
+          <button id="downBtn" class="control-btn">↓</button>
+          <button id="rightBtn" class="control-btn">→</button>
+        </div>
 
-        <section class="panel">
-          <h2>Páginas del libro</h2>
-          <div id="templateGallery" class="template-gallery"></div>
-        </section>
-
-        <section class="panel actions">
-          <button id="clearBtn" class="button secondary">Borrar todo</button>
-          <button id="downloadBtn" class="button primary">Descargar</button>
-        </section>
-      </aside>
-
-      <section class="canvas-panel">
-        <div class="canvas-frame">
-          <div class="page-edge"></div>
-          <div class="canvas-zoom-wrapper">
-            <canvas id="paintCanvas" width="1280" height="960"></canvas>
-            <canvas id="overlayCanvas" width="1280" height="960" aria-hidden="true"></canvas>
-          </div>
-          <div class="canvas-hint">Usa un dedo para pintar. Usa dos dedos para acercar y mover el dibujo.</div>
+        <div class="actions-row">
+          <button id="restartBtn" class="button secondary">Reiniciar nivel</button>
+          <button id="nextBtn" class="button primary" disabled>Siguiente nivel</button>
         </div>
       </section>
+
+      <aside class="reward-panel">
+        <section class="panel reward-section">
+          <h2>Premio</h2>
+          <div class="reward-card">
+            <div class="reward-thumb">
+              <img id="rewardThumb" src="SVG/a.svg" alt="Dibujo desbloqueado">
+            </div>
+            <div class="reward-details">
+              <p id="rewardMessage">Completa el laberinto para desbloquear tu dibujo.</p>
+              <a id="downloadRewardBtn" class="button primary disabled" href="SVG/a.svg" download="dibujo-1.svg">Descargar dibujo</a>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel gallery-panel">
+          <h2>Mis dibujos</h2>
+          <div id="rewardList" class="reward-list">
+            <p class="empty-state">Aún no has completado ningún laberinto.</p>
+          </div>
+        </section>
+      </aside>
     </main>
   </div>
 
