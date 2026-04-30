@@ -243,8 +243,9 @@ input[type="range"] {
 
 .canvas-frame {
   width: 100%;
-  max-width: 920px;
+  max-width: none;
   aspect-ratio: 4 / 3;
+  min-height: 480px;
   position: relative;
   border-radius: 32px;
   background: #faf7f0;
@@ -264,7 +265,7 @@ input[type="range"] {
 
 canvas {
   position: absolute;
-  inset: 5;
+  inset: 0;
   width: 100%;
   height: 100%;
   touch-action: none;
@@ -318,5 +319,10 @@ canvas {
 
   .button {
     flex: 1 1 100%;
+  }
+
+  .canvas-frame {
+    min-height: 520px;
+    aspect-ratio: auto;
   }
 }
