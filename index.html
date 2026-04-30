@@ -24,7 +24,6 @@
             <button type="button" class="tool-button" data-tool="brush" data-size="10">Lápiz medio</button>
             <button type="button" class="tool-button" data-tool="brush" data-size="20">Lápiz grueso</button>
             <button type="button" class="tool-button" data-tool="eraser">Borrador</button>
-            <button type="button" class="tool-button" data-tool="zoom" id="zoomBtn">Lupa</button>
           </div>
           <p class="tool-note">Elige lápiz para colorear o borrador para limpiar con precisión.</p>
         </section>
@@ -62,31 +61,7 @@
             <canvas id="paintCanvas" width="1280" height="960"></canvas>
             <canvas id="overlayCanvas" width="1280" height="960" aria-hidden="true"></canvas>
           </div>
-          <div class="canvas-hint">Melfi color</div>
-          <div class="zoom-bubble hidden" id="zoomBubble">
-            <div class="zoom-header">
-              <span class="zoom-title">🔍 Lupa activa</span>
-              <button type="button" id="exitZoomBtn" class="zoom-close" aria-label="Salir de zoom">×</button>
-            </div>
-            <div class="zoom-row">
-              <label>Zoom: <span id="zoomValue">150%</span></label>
-              <input type="range" id="zoomRange" min="1" max="2" step="0.05" value="1.5" aria-label="Zoom de lupa">
-            </div>
-            <div class="zoom-section">
-              <div class="zoom-tools-group">
-                <span class="zoom-label">Herramienta</span>
-                <div class="zoom-tool-buttons"></div>
-              </div>
-            </div>
-            <div class="zoom-section">
-              <span class="zoom-label">Colores</span>
-              <div id="zoomPalette" class="zoom-color-palette"></div>
-            </div>
-            <div class="zoom-row">
-              <label for="zoomBrushSize">Grosor: <span id="zoomBrushSizeValue">8</span> px</label>
-              <input type="range" id="zoomBrushSize" min="2" max="50" value="8">
-            </div>
-          </div>
+          <div class="canvas-hint">Usa un dedo para pintar. Usa dos dedos para acercar y mover el dibujo.</div>
         </div>
       </section>
     </main>
